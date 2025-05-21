@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  signInStart,
-  signInSuccess,
-  signInFailure,
-} from '../redux/user/userSlice';
 import axios from 'axios';
 
-export default function SignIn() {
+export default function SignUp() {
   const [formData, setFormData] = useState({});
-  const { isSubmitting, error } = useSelector((state) => state.user);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setisSubmitting] = useState(false);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({
@@ -24,18 +18,21 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      dispatch(signInStart());
+      setisSubmitting(true);
       const res = await axios.post('http://localhost:3000/api/auth/signup', formData);
       const data = res.data;
       console.log(data);
       if (data.success === false) {
-        dispatch(signInFailure(data.message));
+        setisSubmitting(false);
+        setError(data.message);
         return;
       }
-      dispatch(signInSuccess(data));
-      navigate('/');
+      setisSubmitting(false);
+      setError(null);
+      navigate('/sign-in');
     } catch (error) {
-      dispatch(signInFailure(error.response?.data?.message || error.message));
+      setisSubmitting(false);
+      setError(error.response?.data?.message || error.message);
     }
   };
 
@@ -69,13 +66,13 @@ export default function SignIn() {
           disabled={isSubmitting}
           className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
         >
-          {isSubmitting ? 'Submitting...' : 'Sign In'}
+          {isSubmitting ? 'Submitting...' : 'Sign Up'}
         </button>
       </form>
       <div className='flex gap-2 mt-5'>
-        <p>Already Registered?</p>
+        <p>Have an account?</p>
         <Link to={'/sign-in'}>
-          <span className='text-blue-700'>Sign In</span>
+          <span className='text-blue-700'>Sign in</span>
         </Link>
       </div>
       {error && <p className='text-red-500 mt-5'>{error}</p>}
