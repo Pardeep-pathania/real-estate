@@ -1,95 +1,84 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  signInStart,
+  signInSuccess,
+  signInFailure,
+} from '../redux/user/userSlice';
 import axios from 'axios';
 
-const SignUp = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function SignIn() {
+  const [formData, setFormData] = useState({});
+  const { isSubmitting, error } = useSelector((state) => state.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-
     try {
-      const response = await axios.post(
-        'http://localhost:3000/api/auth/signup',
-        formData
-      );
-      alert('User registered successfully');
-      navigate('/sign-in');
-    } catch (err) {
-      if (err.response) {
-        setError(err.response.data.error || 'An unexpected error occurred');
-      } else {
-        setError('Network error. Please try again later.');
+      dispatch(signInStart());
+      const res = await axios.post('http://localhost:3000/api/auth/signup', formData);
+      const data = res.data;
+      console.log(data);
+      if (data.success === false) {
+        dispatch(signInFailure(data.message));
+        return;
       }
-    } finally {
-      setIsSubmitting(false);
+      dispatch(signInSuccess(data));
+      navigate('/');
+    } catch (error) {
+      dispatch(signInFailure(error.response?.data?.message || error.message));
     }
   };
 
   return (
     <div className='p-3 max-w-lg mx-auto'>
-      <h1 className='text-3xl text-center font-semibold my-7'>SignUp</h1>
-
-      {error && <div className='text-red-500 mb-4'>{error}</div>}
-
+      <h1 className='text-3xl text-center font-semibold my-7'>Sign Up</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input
           type='text'
-          placeholder='Username'
+          placeholder='username'
           className='border p-3 rounded-lg'
           id='username'
-          value={formData.username}
           onChange={handleChange}
-          required
         />
         <input
           type='email'
-          placeholder='Email'
+          placeholder='email'
           className='border p-3 rounded-lg'
           id='email'
-          value={formData.email}
           onChange={handleChange}
-          required
         />
         <input
           type='password'
-          placeholder='Password'
+          placeholder='password'
           className='border p-3 rounded-lg'
           id='password'
-          value={formData.password}
           onChange={handleChange}
-          required
         />
+
         <button
-          type='submit'
-          className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
           disabled={isSubmitting}
+          className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
         >
-          {isSubmitting ? 'Submitting...' : 'SignUp'}
+          {isSubmitting ? 'Submitting...' : 'Sign In'}
         </button>
       </form>
-
       <div className='flex gap-2 mt-5'>
-        <p>Already registered?</p>
-        <Link to='/sign-in'>
+        <p>Already Registered?</p>
+        <Link to={'/sign-in'}>
           <span className='text-blue-700'>Sign In</span>
         </Link>
       </div>
+      {error && <p className='text-red-500 mt-5'>{error}</p>}
     </div>
   );
-};
-
-export default SignUp;
+}
